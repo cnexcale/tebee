@@ -25,8 +25,8 @@ type commandParseResult struct {
 
 const CommandToken = "!"
 
-var KnownCommands = map[string]int{
-	"joke": 0,
+var KnownCommands = []string{
+	"joke",
 }
 
 var CommandRegex = regexp.MustCompile(`^[a-z]($|(\w[a-z0-9]+)+$)`)
