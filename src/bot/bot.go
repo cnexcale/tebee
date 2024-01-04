@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	twitch "tam/src/twitch"
+	utils "tam/src/utils"
 )
 
 type Bot struct {
@@ -24,17 +25,24 @@ type commandParseResult struct {
 }
 
 const CommandToken = "!"
+const CmdJoke = CommandToken + "joke"
 
 var KnownCommands = []string{
-	"joke",
+	CmdJoke,
 }
 
-var CommandRegex = regexp.MustCompile(`^[a-z]($|(\w[a-z0-9]+)+$)`)
+// var CommandRegex = regexp.MustCompile(`^` + CommandToken + `[a-z]($|(\w[a-z0-9]+)+$)`)
+// var CommandRegex = regexp.MustCompile(`(^` + CommandToken + `[a-z]($|(\w[a-z0-9]+)+$)`)
+
+// var CommandRegex = regexp.MustCompile(`^(?P<CMD>` + CommandToken + `[a-z]+)(?P<PARAMS>\w+[a-z0-9]+)*$`)
+
+// TODO - fix, doesnt caputure inner parameters
+var CommandRegex = regexp.MustCompile(`^(` + CommandToken + `[a-z]+)(\s+[a-z0-9]+)*$`)
 
 func (b Bot) Run(config twitch.ClientConfig) {
 	b.Client = twitch.Init(config)
 
-	for true {
+	for {
 		message := b.Client.ReceiveMessage()
 
 		parseResult := parseMessage(message.Content)
@@ -50,16 +58,17 @@ func (b Bot) Run(config twitch.ClientConfig) {
 }
 
 func (b Bot) handleCommand(cmd Command) {
-	fmt.Println("Would handle command %s with params %#v", cmd.Command, cmd.Params)
+	fmt.Printf("Would handle command %s with params %#v\n", cmd.Command, cmd.Params)
 }
 
 func parseMessage(message string) commandParseResult {
+	normalizedMsg := normalizeMessage(message)
 
-	if !CommandRegex.MatchString(message) {
+	if !CommandRegex.MatchString(normalizedMsg) {
 		return commandParseResult{false, Command{}}
 	}
 
-	cmd := parseCommand(message)
+	cmd := parseCommand(normalizedMsg)
 
 	if !slices.Contains(KnownCommands, cmd.Command) {
 		return commandParseResult{false, Command{}}
@@ -68,15 +77,21 @@ func parseMessage(message string) commandParseResult {
 	return commandParseResult{true, cmd}
 }
 
-func parseCommand(msg string) Command {
-	normalizedMsg := normalizeMessage(msg)
-	matches := CommandRegex.FindStringSubmatch(normalizedMsg)
+func parseCommand(message string) Command {
+	matches := CommandRegex.FindStringSubmatch(message)
+
 	cmd := Command{
-		Command: matches[0],
+		Command: matches[1],
 	}
 
-	for _, matchedParam := range matches[1:] {
-		cmd.Params = append(cmd.Params, matchedParam)
+	filteredParams := utils.Filter[string](matches[2:], utils.IsStringNotEmpty)
+
+	if len(filteredParams) == 0 {
+		return cmd
+	}
+
+	for _, param := range filteredParams {
+		cmd.Params = append(cmd.Params, strings.TrimSpace(param))
 	}
 
 	return cmd

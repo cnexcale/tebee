@@ -2,59 +2,112 @@ package bot
 
 import "testing"
 
-type parseCommandTest struct {
-	rawMsg   string
-	expected Command
+type parseMessageTest struct {
+	rawMsg  string
+	isValid bool
+	command Command
 }
 
-var parseCommandTestcases = []parseCommandTest{
+var parseCommandTestcases = []parseMessageTest{
+	// valid
 	{
 		"!joke",
-		Command{"joke", []string{}, ""},
+		true,
+		Command{CmdJoke, []string{}, ""},
 	},
 	{
 		"!JOKE",
-		Command{"joke", []string{}, ""},
+		true,
+		Command{CmdJoke, []string{}, ""},
 	},
 	{
 		"!jOkE",
-		Command{"joke", []string{}, ""},
+		true,
+		Command{CmdJoke, []string{}, ""},
 	},
 	{
 		"!joke bla",
-		Command{"joke", []string{"bla"}, ""},
+		true,
+		Command{CmdJoke, []string{"bla"}, ""},
 	},
 	{
 		"!joke BLA",
-		Command{"joke", []string{"bla"}, ""},
+		true,
+		Command{CmdJoke, []string{"bla"}, ""},
 	},
 	{
 		"!joke bla blub",
-		Command{"joke", []string{"bla", "blub"}, ""},
+		true,
+		Command{CmdJoke, []string{"bla", "blub"}, ""},
+	},
+	// invalid
+	{
+		"",
+		false,
+		Command{},
+	},
+	{
+		"\n",
+		false,
+		Command{},
+	},
+	{
+		"\t",
+		false,
+		Command{},
+	},
+	{
+		"!!",
+		false,
+		Command{},
 	},
 }
 
-func TestParseCommand(t *testing.T) {
+func TestParseMessage(t *testing.T) {
 
 	for _, testCase := range parseCommandTestcases {
-		cmd := parseCommand(testCase.rawMsg)
-		if compareCommand(cmd, testCase.expected) {
+		result := parseMessage(testCase.rawMsg)
+		if !compareParseMessageResult(result, testCase) {
 			t.Errorf("parsing %s failed", testCase.rawMsg)
 		}
 	}
 }
 
-func compareCommand(cmd, expected Command) bool {
-	if cmd.Command != expected.Command {
+func FuzzTestParseMessage(f *testing.F) {
+	var seed = []string{"asd", "   ", "!§!)=$", "'ädasö", "\n", "\t"}
+	for _, s := range seed {
+		f.Add(s)
+	}
+
+	f.Fuzz(func(t *testing.T, a string) {
+		result := parseMessage(a)
+		if result.IsValidCommand {
+			t.Errorf("Fuzzed valid command: %s", a)
+		}
+
+	})
+}
+
+func compareParseMessageResult(result commandParseResult, expected parseMessageTest) bool {
+
+	if result.IsValidCommand != expected.isValid {
 		return false
 	}
 
-	if len(cmd.Params) != len(expected.Params) {
+	if result.Command.Command != expected.command.Command {
 		return false
 	}
 
-	for i, expectedParam := range expected.Params {
-		if expectedParam != cmd.Params[i] {
+	if len(result.Command.Params) != len(expected.command.Params) {
+		return false
+	}
+
+	if len(expected.command.Params) == 0 {
+		return true
+	}
+
+	for i, expectedParam := range expected.command.Params {
+		if expectedParam != result.Command.Params[i] {
 			return false
 		}
 	}
