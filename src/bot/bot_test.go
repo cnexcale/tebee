@@ -38,7 +38,12 @@ var parseCommandTestcases = []parseMessageTest{
 	{
 		"!joke bla blub",
 		true,
-		Command{CmdJoke, []string{"bla", "blub"}, ""},
+		Command{CmdJoke, []string{"bla"}, ""},
+	},
+	{
+		"!joke bla blub asd asd asdasd asd asd asd",
+		true,
+		Command{CmdJoke, []string{"bla"}, ""},
 	},
 	// invalid
 	{

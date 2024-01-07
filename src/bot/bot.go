@@ -31,13 +31,10 @@ var KnownCommands = []string{
 	CmdJoke,
 }
 
-// var CommandRegex = regexp.MustCompile(`^` + CommandToken + `[a-z]($|(\w[a-z0-9]+)+$)`)
-// var CommandRegex = regexp.MustCompile(`(^` + CommandToken + `[a-z]($|(\w[a-z0-9]+)+$)`)
+// TODO - fix, doesnt caputure inner parameters for > 1 param
+// var CommandRegex = regexp.MustCompile(`^(` + CommandToken + `[a-z]+)(\s+[a-z0-9]+)*$`)
 
-// var CommandRegex = regexp.MustCompile(`^(?P<CMD>` + CommandToken + `[a-z]+)(?P<PARAMS>\w+[a-z0-9]+)*$`)
-
-// TODO - fix, doesnt caputure inner parameters
-var CommandRegex = regexp.MustCompile(`^(` + CommandToken + `[a-z]+)(\s+[a-z0-9]+)*$`)
+var CommandRegex = regexp.MustCompile(`^(` + CommandToken + `[a-z]+)($|\s+[a-z0-9]+)`)
 
 func (b Bot) Run(config twitch.ClientConfig) {
 	b.Client = twitch.Init(config)
@@ -45,20 +42,29 @@ func (b Bot) Run(config twitch.ClientConfig) {
 	for {
 		message := b.Client.ReceiveMessage()
 
-		parseResult := parseMessage(message.Content)
+		// use concurrency once bot is fully implemented
+		// go b.handleMessage(message)
 
-		if !parseResult.IsValidCommand {
-			fmt.Println("Not a valid command")
-			continue
-		}
-
-		b.handleCommand(parseResult.Command)
+		b.handleMessage(message)
 	}
-
 }
 
-func (b Bot) handleCommand(cmd Command) {
-	fmt.Printf("Would handle command %s with params %#v\n", cmd.Command, cmd.Params)
+func (b Bot) handleMessage(message twitch.ChatMessage) {
+	parseResult := parseMessage(message.Content)
+
+	if !parseResult.IsValidCommand {
+		fmt.Println("Not a valid command")
+		return
+	}
+
+	b.HandleCommand(parseResult.Command)
+}
+
+func (b Bot) HandleCommand(cmd Command) {
+	// fmt.Printf("Would handle command %s with params %#v\n", cmd.Command, cmd.Params)
+	if cmd.Command == CmdJoke {
+		handleJokeCommand(*b.Client, cmd)
+	}
 }
 
 func parseMessage(message string) commandParseResult {
@@ -90,9 +96,8 @@ func parseCommand(message string) Command {
 		return cmd
 	}
 
-	for _, param := range filteredParams {
-		cmd.Params = append(cmd.Params, strings.TrimSpace(param))
-	}
+	// only consider first param, discard the rest
+	cmd.Params = append(cmd.Params, strings.TrimSpace(filteredParams[0]))
 
 	return cmd
 }
