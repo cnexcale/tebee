@@ -12,4 +12,4 @@ clean:
 	rm ${BINARY_NAME}
 
 test:
-	go test tam/src/bot
+	go test teebee/src/bot

@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	twitch "tam/src/twitch"
-	utils "tam/src/utils"
+	twitch "teebee/src/twitch"
+	utils "teebee/src/utils"
 )
 
 type Bot struct {

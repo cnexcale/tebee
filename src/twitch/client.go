@@ -27,6 +27,7 @@ type Client struct {
 	Password string
 	BaseUrl  string
 	ApiToken string
+	// TODO - add channels for incoming / outgoing messages
 }
 
 func Init(config ClientConfig) *Client {

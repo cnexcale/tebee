@@ -7,7 +7,7 @@ import (
 	"log"
 	http "net/http"
 
-	twitch "tam/src/twitch"
+	twitch "teebee/src/twitch"
 )
 
 // https://jokeapi.dev/
