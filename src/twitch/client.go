@@ -1,7 +1,12 @@
 package twitchclient
 
 import (
+	"context"
 	"fmt"
+	"log"
+
+	"golang.org/x/oauth2/clientcredentials"
+	"golang.org/x/oauth2/twitch"
 )
 
 type ChatMessage struct {
@@ -11,25 +16,38 @@ type ChatMessage struct {
 }
 
 type ClientConfig struct {
-	Username string
-	Password string
-	BaseUrl  string
-	ApiKey   string
+	ClientId     string
+	ClientSecret string
+	BaseUrl      string
+	ApiKey       string
 }
 
 type Client struct {
 	Username string
 	Password string
 	BaseUrl  string
-	ApiKey   string
+	ApiToken string
 }
 
 func Init(config ClientConfig) *Client {
+	// https://github.com/twitchdev/authentication-go-sample
+	oauth2Config := &clientcredentials.Config{
+		ClientID:     config.ClientId,
+		ClientSecret: config.ClientSecret,
+		TokenURL:     twitch.Endpoint.TokenURL,
+	}
+
+	token, err := oauth2Config.Token(context.Background())
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	client := &Client{
-		Username: config.Username,
-		Password: config.Password,
+		Username: config.ClientId,
+		Password: config.ClientSecret,
 		BaseUrl:  config.BaseUrl,
-		ApiKey:   config.ApiKey,
+		ApiToken: token.AccessToken,
 	}
 
 	fmt.Println("Initialized client")
