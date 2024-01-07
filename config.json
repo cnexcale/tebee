@@ -1,0 +1,6 @@
+{
+    "clientId" : "",
+    "clientSecret": "",
+    "websocketAddress": "wss://irc-ws.chat.twitch.tv:443",
+    "ircAddress": "irc://irc.chat.twitch.tv:6697" 	
+}
