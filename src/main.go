@@ -1,11 +1,15 @@
 package main
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
+
+	bot "teebee/src/bot"
+	twitch "teebee/src/twitch"
 )
 
 func getRoot(w http.ResponseWriter, r *http.Request) {
@@ -18,16 +22,54 @@ func getHello(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "Hello, HTTP!\n")
 }
 
-func main() {
-	http.HandleFunc("/", getRoot)
-	http.HandleFunc("/hello", getHello)
-
-	err := http.ListenAndServe(":3333", nil)
-
-	if errors.Is(err, http.ErrServerClosed) {
-		fmt.Printf("server closed\n")
-	} else if err != nil {
-		fmt.Printf("error starting server: %s\n", err)
-		os.Exit(1)
+func getJoke(w http.ResponseWriter, r *http.Request) {
+	clientConfig := twitch.ClientConfig{
+		ClientId:     "",
+		ClientSecret: "",
+		BaseUrl:      "",
+		ApiKey:       "",
 	}
+	client := twitch.Init(clientConfig)
+	tBot := bot.Bot{Client: client}
+
+	command := bot.Command{
+		Command: bot.CmdJoke,
+		Params:  make([]string, 0),
+	}
+
+	tBot.HandleCommand(command)
+}
+
+type Config struct {
+	ClientId         string `json:"clientId"`
+	ClientSecret     string `json:"clientSecret"`
+	IRCAddress       string `json:"ircAddress"`
+	WebsocketAddress string `json:"websocketAddress"`
+}
+
+func main() {
+	configRaw, err := os.ReadFile("config.json")
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	var config *Config
+	json.Unmarshal(configRaw, &config)
+
+	// getJoke(nil, nil)
+
+	// http.HandleFunc("/", getRoot)
+	// http.HandleFunc("/hello", getHello)
+	// http.HandleFunc("/joke", getJoke)
+
+	// err := http.ListenAndServe(":3333", nil)
+
+	// if errors.Is(err, http.ErrServerClosed) {
+	// 	fmt.Printf("server closed\n")
+	// } else if err != nil {
+	// 	fmt.Printf("error starting server: %s\n", err)
+	// 	os.Exit(1)
+	// }
 }
